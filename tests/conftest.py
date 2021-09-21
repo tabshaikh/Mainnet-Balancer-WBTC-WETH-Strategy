@@ -70,9 +70,11 @@ def deployed():
     ## Tool that verifies bytecode (run independently) <- Webapp for anyone to verify
 
     ## Set up tokens
+    WETH = strategy.WETH()
     want = interface.IERC20(WANT)
     lpComponent = interface.IERC20(LP_COMPONENT)
     rewardToken = interface.IERC20(REWARD_TOKEN)
+    SUSHISWAP_ROUTER = "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F"  # Sushiswap router on arbitrum
 
     ## Wire up Controller to Strart
     ## In testing will pass, but on live it will fail
@@ -80,14 +82,17 @@ def deployed():
     controller.setStrategy(WANT, strategy, {"from": deployer})
 
     ## Uniswap some tokens here
-    router = interface.IUniswapRouterV2("0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D")
+    router = interface.IUniswapRouterV2(SUSHISWAP_ROUTER)
     router.swapExactETHForTokens(
         0,  ## Mint out
-        ["0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", WANT],
+        [WETH, WANT],
         deployer,
         9999999999999999,
         {"from": deployer, "value": 5000000000000000000},
     )
+
+    print("Initial Want Balance: ", want.balanceOf(deployer.address))
+    assert want.balanceOf(deployer) > 0
 
     return DotMap(
         deployer=deployer,
