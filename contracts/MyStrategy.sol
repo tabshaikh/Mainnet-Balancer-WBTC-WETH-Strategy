@@ -114,7 +114,25 @@ contract MyStrategy is BaseStrategy {
     /// @dev invest the amount of want
     /// @notice When this function is called, the controller has already sent want to this
     /// @notice Just get the current balance and then invest accordingly
-    function _deposit(uint256 _amount) internal override {}
+    function _deposit(uint256 _amount) internal override {
+        IAsset[] memory assets = new IAsset[](2);
+        assets[0] = IAsset(want);
+        assets[1] = IAsset(WETH);
+
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = _amount;
+
+        bytes memory userData = abi.encode(uint256(1), amounts); // Here 1 is the id for "EXACT_TOKENS_IN_FOR_BPT_OUT"
+
+        IVault.JoinPoolRequest memory request = IVault.JoinPoolRequest(
+            assets,
+            amounts,
+            userData,
+            false
+        );
+
+        IVault(VAULT).joinPool(poolId, address(this), address(this), request);
+    }
 
     /// @dev utility function to withdraw everything for migration
     function _withdrawAll() internal override {}
