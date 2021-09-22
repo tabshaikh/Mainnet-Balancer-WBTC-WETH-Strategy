@@ -135,7 +135,35 @@ contract MyStrategy is BaseStrategy {
     }
 
     /// @dev utility function to withdraw everything for migration
-    function _withdrawAll() internal override {}
+    function _withdrawAll() internal override {
+        IAsset[] memory assets = new IAsset[](2);
+        assets[0] = IAsset(want);
+        assets[1] = IAsset(WETH);
+
+        uint256[] memory minAmountsOut = new uint256[](2); // minAmountsOut for respective assets
+
+        uint256 exitTokenIndex = 0; // As wbtc is the token we want to exit with therefore exitTokenIndex = 0
+
+        bytes memory userData = abi.encode(
+            uint256(IVault.ExitKind.EXACT_BPT_IN_FOR_ONE_TOKEN_OUT),
+            balanceOfLP(),
+            exitTokenIndex
+        );
+
+        IVault.ExitPoolRequest memory exit_request = IVault.ExitPoolRequest(
+            assets,
+            minAmountsOut,
+            userData,
+            false
+        );
+
+        IVault(VAULT).exitPool(
+            poolId,
+            address(this),
+            payable(address(this)),
+            exit_request
+        );
+    }
 
     /// @dev withdraw the specified amount of want, liquidate from lpComponent to want, paying off any necessary debt for the conversion
     function _withdrawSome(uint256 _amount)
