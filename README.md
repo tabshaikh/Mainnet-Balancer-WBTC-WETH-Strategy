@@ -18,6 +18,11 @@ pip install -r requirements.txt
 brownie networks import network-config.yaml 
 # if you have the network with same name already in your `brownie networks list` the above command will fail, to overcome this change the name of the networks in network-config.yaml and brownie-config.yaml accordingly.
 ```
+# Test 
+
+```
+brownie test tests/test_custom.py -I --verbose
+```
 
 # Harvest - 
 
