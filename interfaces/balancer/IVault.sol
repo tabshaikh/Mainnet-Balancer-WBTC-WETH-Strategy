@@ -30,6 +30,18 @@ pragma solidity ^0.6.11;
  * don't override one of these declarations.
  */
 interface IVault is ISignaturesValidator, ITemporarilyPausable {
+    enum JoinKind {
+        INIT,
+        EXACT_TOKENS_IN_FOR_BPT_OUT,
+        TOKEN_IN_FOR_EXACT_BPT_OUT,
+        ALL_TOKENS_IN_FOR_EXACT_BPT_OUT
+    }
+    enum ExitKind {
+        EXACT_BPT_IN_FOR_ONE_TOKEN_OUT,
+        EXACT_BPT_IN_FOR_TOKENS_OUT,
+        BPT_IN_FOR_EXACT_TOKENS_OUT
+    }
+
     // Generalities about the Vault:
     //
     // - Whenever documentation refers to 'tokens', it strictly refers to ERC20-compliant token contracts. Tokens are
@@ -234,7 +246,11 @@ interface IVault is ISignaturesValidator, ITemporarilyPausable {
     //  - Two Token: only allows two tokens to be registered. This achieves the lowest possible swap gas cost. Like
     // minimal swap info Pools, these are called via IMinimalSwapInfoPool.
 
-    enum PoolSpecialization {GENERAL, MINIMAL_SWAP_INFO, TWO_TOKEN}
+    enum PoolSpecialization {
+        GENERAL,
+        MINIMAL_SWAP_INFO,
+        TWO_TOKEN
+    }
 
     /**
      * @dev Registers the caller account as a Pool with a given specialization setting. Returns the Pool's ID, which
@@ -481,7 +497,10 @@ interface IVault is ISignaturesValidator, ITemporarilyPausable {
         uint256[] protocolFeeAmounts
     );
 
-    enum PoolBalanceChangeKind {JOIN, EXIT}
+    enum PoolBalanceChangeKind {
+        JOIN,
+        EXIT
+    }
 
     // Swaps
     //
@@ -530,7 +549,10 @@ interface IVault is ISignaturesValidator, ITemporarilyPausable {
     //
     // Finally, Internal Balance can be used when either sending or receiving tokens.
 
-    enum SwapKind {GIVEN_IN, GIVEN_OUT}
+    enum SwapKind {
+        GIVEN_IN,
+        GIVEN_OUT
+    }
 
     /**
      * @dev Performs a swap with a single Pool.
@@ -754,7 +776,11 @@ interface IVault is ISignaturesValidator, ITemporarilyPausable {
      * Updates don't affect the Pool's cash balance, but because the managed balance changes, it does alter the total.
      * The external amount can be either increased or decreased by this call (i.e., reporting a gain or a loss).
      */
-    enum PoolBalanceOpKind {WITHDRAW, DEPOSIT, UPDATE}
+    enum PoolBalanceOpKind {
+        WITHDRAW,
+        DEPOSIT,
+        UPDATE
+    }
 
     /**
      * @dev Emitted when a Pool's token Asset Manager alters its balance via `managePoolBalance`.
