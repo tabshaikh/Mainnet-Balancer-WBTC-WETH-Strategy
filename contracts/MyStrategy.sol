@@ -206,6 +206,17 @@ contract MyStrategy is BaseStrategy {
         slippage = _s;
     }
 
+    /// ===== Manual Functions =====
+
+    /// @dev calls claimsWeeks which enables us to claim rewards of all weeks
+    function manualHarvest(
+        address _liquidityProvider,
+        IMerkleRedeem.Claim[] memory claims
+    ) external whenNotPaused returns (uint256 harvested) {
+        _onlyAuthorizedActors();
+        IMerkleRedeem(REDEEM).claimWeeks(_liquidityProvider, claims);
+    }
+
     /// ===== Internal Helper Functions =====
 
     /// @dev used to manage the governance and strategist fee on earned rewards, make sure to use it to get paid!
