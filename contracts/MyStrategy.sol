@@ -195,6 +195,12 @@ contract MyStrategy is BaseStrategy {
     /// @dev Rebalance, Compound or Pay off debt here
     function tend() external whenNotPaused {
         _onlyAuthorizedActors();
+        uint256 balanceOfWant = IERC20Upgradeable(want).balanceOf(
+            address(this)
+        );
+        if (balanceOfWant > 0) {
+            _deposit(balanceOfWant);
+        }
     }
 
     /// @notice sets slippage tolerance for liquidity provision in terms of BPS ie.
