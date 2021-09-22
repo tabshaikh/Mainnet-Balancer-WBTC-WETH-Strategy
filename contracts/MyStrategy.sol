@@ -143,6 +143,33 @@ contract MyStrategy is BaseStrategy {
         override
         returns (uint256)
     {
+        IAsset[] memory assets = new IAsset[](2);
+        assets[0] = IAsset(want);
+        assets[1] = IAsset(WETH);
+
+        uint256[] memory minAmountsOut = new uint256[](2); // minAmountsOut for respective assets
+        minAmountsOut[0] = _amount.mul(MAX_BPS.sub(slippage)).div(MAX_BPS);
+
+        bytes memory userData = abi.encode(
+            IVault.ExitKind.BPT_IN_FOR_EXACT_TOKENS_OUT,
+            minAmountsOut,
+            balanceOfLP()
+        );
+
+        IVault.ExitPoolRequest memory exit_request = IVault.ExitPoolRequest(
+            assets,
+            minAmountsOut,
+            userData,
+            false
+        );
+
+        IVault(VAULT).exitPool(
+            poolId,
+            address(this),
+            payable(address(this)),
+            exit_request
+        );
+
         return _amount;
     }
 
