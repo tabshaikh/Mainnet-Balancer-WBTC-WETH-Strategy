@@ -2,6 +2,22 @@
 ![balancer-wbtc-weth](https://user-images.githubusercontent.com/31198893/134141316-178b6e33-e955-4d99-be67-d47089e59430.jpg)
 
 # Setup and Installation - 
+ - Install the dependencies in the package
+```
+## Javascript dependencies
+npm i
+
+## Python Dependencies
+pip install virtualenv
+virtualenv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+ - import brownie network config
+```
+brownie networks import network-config.yaml 
+# if you have the network with same name already in your `brownie networks list` the above command will fail, to overcome this change the name of the networks in network-config.yaml and brownie-config.yaml accordingly.
+```
 
 # Harvest - 
 
