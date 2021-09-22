@@ -78,7 +78,9 @@ contract MyStrategy is BaseStrategy {
 
     /// @dev Returns true if this strategy requires tending
     function isTendable() public view override returns (bool) {
-        return true;
+        // Checks balance of want token (WBTC)
+        // returns true if balance of want > 0 as we have wbtc to deposit into the strat
+        return balanceOfWant() > 0;
     }
 
     // @dev These are the tokens that cannot be moved except by the vault
