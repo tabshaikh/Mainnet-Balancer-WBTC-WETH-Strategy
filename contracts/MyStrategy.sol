@@ -10,6 +10,11 @@ import "../deps/@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol
 import "../deps/@openzeppelin/contracts-upgradeable/token/ERC20/SafeERC20Upgradeable.sol";
 
 import "../interfaces/badger/IController.sol";
+import {IVault} from "../interfaces/balancer/IVault.sol";
+import {IBalancerPool} from "../interfaces/balancer/IBalancerPool.sol";
+import {IMerkleRedeem} from "../interfaces/balancer/IMerkleRedeem.sol";
+import "../interfaces/balancer/IAsset.sol";
+import "../interfaces/erc20/IERC20.sol";
 
 import {BaseStrategy} from "../deps/BaseStrategy.sol";
 
@@ -21,6 +26,20 @@ contract MyStrategy is BaseStrategy {
     // address public want // Inherited from BaseStrategy, the token the strategy wants, swaps into and tries to grow
     address public lpComponent; // Token we provide liquidity with
     address public reward; // Token we farm and swap to want / lpComponent
+
+    address public constant VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8; // Balancer Vault address
+    bytes32 public constant poolId =
+        0xa6f548df93de924d73be7d25dc02554c6bd66db500020000000000000000000e; // Pool Id of WBTC/WETH Balancer Pool
+    address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; // WETH
+
+    address public constant SUSHISWAP_ROUTER =
+        0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506; // SushiSwap router
+    address public constant POOL = 0xA6F548DF93de924d73be7D25dC02554c6bD66dB5; // WBTC/WETH Balancer Pool address
+    IBalancerPool public bpt = IBalancerPool(POOL); // WBTC/WETH Balancer Pool
+
+    uint256 public slippage;
+    uint256 public constant MAX_BPS = 10000;
+    address public REDEEM = 0x6d19b2bF3A36A61530909Ae65445a906D98A2Fa8; // Merkle Redeem contract address on mainnet
 
     // Used to signal to the Badger Tree that rewards where sent to it
     event TreeDistribution(
@@ -55,15 +74,23 @@ contract MyStrategy is BaseStrategy {
         performanceFeeStrategist = _feeConfig[1];
         withdrawalFee = _feeConfig[2];
 
+        slippage = 25; // 0.5% slippage allowance
+
         /// @dev do one off approvals here
-        // IERC20Upgradeable(want).safeApprove(gauge, type(uint256).max);
+        IERC20Upgradeable(want).safeApprove(VAULT, type(uint256).max);
+        IERC20Upgradeable(want).safeApprove(POOL, type(uint256).max);
+        IERC20Upgradeable(WETH).safeApprove(POOL, type(uint256).max);
+        IERC20Upgradeable(reward).safeApprove(
+            SUSHISWAP_ROUTER,
+            type(uint256).max
+        );
     }
 
     /// ===== View Functions =====
 
     // @dev Specify the name of the strategy
     function getName() external pure override returns (string memory) {
-        return "StrategyName";
+        return "Mainnet-Balancer-WBTC-WETH-Strategy";
     }
 
     // @dev Specify the version of the Strategy, for upgrades
@@ -73,7 +100,12 @@ contract MyStrategy is BaseStrategy {
 
     /// @dev Balance of want currently held in strategy positions
     function balanceOfPool() public view override returns (uint256) {
-        return 0;
+        return bpt.balanceOf(address(this));
+    }
+
+    /// @dev Balance of lpcomponent component
+    function balanceOfLP() public view returns (uint256) {
+        return IERC20Upgradeable(lpComponent).balanceOf(address(this));
     }
 
     /// @dev Returns true if this strategy requires tending
@@ -122,7 +154,10 @@ contract MyStrategy is BaseStrategy {
         uint256[] memory amounts = new uint256[](2);
         amounts[0] = _amount;
 
-        bytes memory userData = abi.encode(uint256(1), amounts); // Here 1 is the id for "EXACT_TOKENS_IN_FOR_BPT_OUT"
+        bytes memory userData = abi.encode(
+            uint256(IVault.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT),
+            amounts
+        );
 
         IVault.JoinPoolRequest memory request = IVault.JoinPoolRequest(
             assets,
@@ -209,12 +244,15 @@ contract MyStrategy is BaseStrategy {
 
         // Write your code here
 
-        uint256 earned =
-            IERC20Upgradeable(want).balanceOf(address(this)).sub(_before);
+        uint256 earned = IERC20Upgradeable(want).balanceOf(address(this)).sub(
+            _before
+        );
 
         /// @notice Keep this in so you get paid!
-        (uint256 governancePerformanceFee, uint256 strategistPerformanceFee) =
-            _processRewardsFees(earned, reward);
+        (
+            uint256 governancePerformanceFee,
+            uint256 strategistPerformanceFee
+        ) = _processRewardsFees(earned, reward);
 
         // TODO: If you are harvesting a reward token you're not compounding
         // You probably still want to capture fees for it
