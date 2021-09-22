@@ -1,6 +1,59 @@
 # Mainnet Balancer WBTC/WETH Strategy - 
 ![balancer-wbtc-weth](https://user-images.githubusercontent.com/31198893/134141316-178b6e33-e955-4d99-be67-d47089e59430.jpg)
 
+# Setup and Installation - 
+
+# Harvest - 
+
+**Context -** 
+Balancer has a weekly distribution of BAL tokens for liquidity providers. The calculation of rewards due to each liquidity provider is calculated off-chain using these scripts: https://github.com/balancer-labs/bal-mining-scripts , And then the contract [MekleRedeem.sol](https://github.com/balancer-labs/balancer-v2-monorepo/blob/master/pkg/distributors/contracts/MerkleRedeem.sol) is seeded with the merkle root for that week.
+Therefore to Redeem balancer rewards a Merkle Proof needs to be calculated offchain and then [claimWeeks](https://github.com/balancer-labs/balancer-v2-monorepo/blob/a3875bdf1c5afb57092caf4d36062d906dcc2513/pkg/distributors/contracts/MerkleRedeem.sol#L115) function needs to be called with the merkle proof.
+
+### Setup for Harvest -
+
+```
+# To make this work you must have ganache-cli and yarn installed.
+# In a new folder
+git clone https://github.com/balancer-labs/erc20-redeemable
+
+# Move to the merkle tree folder
+cd erc20-redeemable/merkle
+
+# yarn install the dependencies
+yarn
+
+# In a new window start a ganache node
+ganache-cli --accounts 10 --defaultBalanceEther 100000 --hardfork istanbul --fork https://mainnet.infura.io/v3/69dbf432f99c4afe960380029c0d68e1 --gasLimit 12000000 --mnemonic brownie --port 8545 --chainId 1
+
+```
+### Calculating Merkle Proof for a week -
+ - Balancer generates and publishes the data every week, for example the latest: https://github.com/balancer-labs/bal-mining-scripts/blob/master/reports/67/_totals.json - verify that the address for which you are calculating the proof is there in the list
+
+ - Download the file and place it in erc20-redeemable/merkle
+ - Now run the below command with params 
+    - {absolute_path_to_data} - absolute path to the data file you have downloaded
+    - {address} - address for which you want to calculate the merkle proof
+```
+# In folder erc20-redeemable/merkle run:
+npm run calculateProof {absolute_path_to_data} {address}
+```
+After the above steps the output should look something like this 
+![Screenshot from 2021-09-22 16-26-25](https://user-images.githubusercontent.com/31198893/134332529-c6c7fe0b-0ee2-44e6-a0d9-ae0568ac152d.png)
+
+ - copy proof from output and make a struct like lets call it `struct1`
+ ```
+ struct1 = [
+  week, # type uint256: week for which the rewards are harvested
+  balance, # type uint256: balance of reward for the week
+  merkleProof # type bytes[]: proof from output of running the above command
+ ]
+ ```
+ #### repeat this for all weeks you are trying to harvest rewards
+ - join the structs of all weeks `eg. claims = [struct1, struct2, ...]`
+ - now you can use to this struct to call harvest function like shown below which will redeem the rewards and swap them for WANT tokens
+ ```
+ strategy.harvest(claims, {"from": deployer});
+ ```
 
 # Badger Strategy V1 Brownie Mix
 
