@@ -1,5 +1,5 @@
 # Mainnet Balancer WBTC/WETH Strategy - 
-![balancer-wbtc-weth](https://user-images.githubusercontent.com/31198893/134141316-178b6e33-e955-4d99-be67-d47089e59430.jpg)
+![mainnetwbc](https://user-images.githubusercontent.com/31198893/134468904-ddc9d367-b2f8-44a2-9f17-06fbef531b79.jpg)
 
 # Setup and Installation - 
  - Install the dependencies in the package
