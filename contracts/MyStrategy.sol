@@ -15,6 +15,7 @@ import {IBalancerPool} from "../interfaces/balancer/IBalancerPool.sol";
 import {IMerkleRedeem} from "../interfaces/balancer/IMerkleRedeem.sol";
 import "../interfaces/balancer/IAsset.sol";
 import "../interfaces/erc20/IERC20.sol";
+import {IUniswapRouterV2} from "../interfaces/uniswap/IUniswapRouterV2.sol";
 
 import {BaseStrategy} from "../deps/BaseStrategy.sol";
 
@@ -26,6 +27,10 @@ contract MyStrategy is BaseStrategy {
     // address public want // Inherited from BaseStrategy, the token the strategy wants, swaps into and tries to grow
     address public lpComponent; // Token we provide liquidity with
     address public reward; // Token we farm and swap to want / lpComponent
+
+    // Balancer does not have any view functions that returns the balance of pool in terms of WBTC
+    // Therefore using this variable to track the balance of pool in terms of want
+    uint256 public balanceOfPoolinWant;
 
     address public constant VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8; // Balancer Vault address
     bytes32 public constant poolId =
@@ -74,7 +79,9 @@ contract MyStrategy is BaseStrategy {
         performanceFeeStrategist = _feeConfig[1];
         withdrawalFee = _feeConfig[2];
 
-        slippage = 25; // 0.5% slippage allowance
+        slippage = 25; // 0.25% slippage allowance
+
+        balanceOfPoolinWant = 0;
 
         /// @dev do one off approvals here
         IERC20Upgradeable(want).safeApprove(VAULT, type(uint256).max);
@@ -100,7 +107,11 @@ contract MyStrategy is BaseStrategy {
 
     /// @dev Balance of want currently held in strategy positions
     function balanceOfPool() public view override returns (uint256) {
-        return bpt.balanceOf(address(this));
+        return balanceOfPoolinWant;
+        // Balancer does not have any view functions that returns the balance of pool in terms of WBTC
+        // Cannot do something like this:
+        // return bpt.balanceOf(address(this)); // This will be incorrect as wbtc has 8 decimals
+        // and bpt.balanceOf returns balanceOf SLP token which is in 10 decimals
     }
 
     /// @dev Balance of lpcomponent component
@@ -167,6 +178,8 @@ contract MyStrategy is BaseStrategy {
         );
 
         IVault(VAULT).joinPool(poolId, address(this), address(this), request);
+
+        balanceOfPoolinWant = balanceOfPoolinWant.add(_amount);
     }
 
     /// @dev utility function to withdraw everything for migration
@@ -198,6 +211,9 @@ contract MyStrategy is BaseStrategy {
             payable(address(this)),
             exit_request
         );
+
+        balanceOfPoolinWant = 0; // Assigning this to zero as we have put the EXACT_BPT_IN_FOR_ONE_TOKEN_OUT therefore our
+        // total position will be burned and WBTC will be returned.
     }
 
     /// @dev withdraw the specified amount of want, liquidate from lpComponent to want, paying off any necessary debt for the conversion
@@ -232,6 +248,8 @@ contract MyStrategy is BaseStrategy {
             payable(address(this)),
             exit_request
         );
+
+        balanceOfPoolinWant = balanceOfPoolinWant.sub(_amount);
 
         return _amount;
     }

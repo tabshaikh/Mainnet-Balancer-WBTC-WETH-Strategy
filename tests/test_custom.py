@@ -77,6 +77,9 @@ def test_custom_withdraw_all(deployer, sett, strategy, want, controller):
 
     # Deposit complete
 
+    slippage = 0.9975
+    beforeBalanceOfPool = strategy.balanceOfPool()
+
     # Withdraw
     controller.withdrawAll(strategy.want(), {"from": deployer})
 
@@ -119,7 +122,7 @@ def test_custom_withdraw_some(deployer, sett, strategy, want, controller, vault)
     # Deposit complete
 
     beforeLP = strategy.balanceOfLP()
-    beforeWantInSett = want.balanceOf(sett)
+    beforePoolBalance = strategy.balanceOfPool()
 
     # Withdraw 1/10th amount of whatever we deposited into sett
     _toWithdraw = depositAmount // 10
@@ -127,10 +130,10 @@ def test_custom_withdraw_some(deployer, sett, strategy, want, controller, vault)
     # Withdraw
     controller.withdraw(strategy.want(), _toWithdraw, {"from": vault})
 
-    slippage = 0.95  # 0.5% slippage
+    slippage = 0.9975  # 0.25% slippage
 
     afterLP = strategy.balanceOfLP()
-    afterWantInSett = want.balanceOf(sett)
+    afterPoolBalance = strategy.balanceOfPool()
 
-    # The amount of want in sett after withdraw some should be more than the amount we wanted to withdraw * slippage
-    assert (afterWantInSett - beforeWantInSett) >= _toWithdraw * slippage
+    # Difference in Pool balance should be equal to the amount we withdrew
+    assert (beforePoolBalance - afterPoolBalance) == _toWithdraw

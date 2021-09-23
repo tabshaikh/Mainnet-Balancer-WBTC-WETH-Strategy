@@ -48,6 +48,8 @@ def test_is_profitable(deployed):
 
     ending_balance = want.balanceOf(deployer)
 
+    slippage = 0.9975  # considering a slippage of 0.25%
+
     initial_balance_with_fees = initial_balance * (
         1 - (DEFAULT_WITHDRAWAL_FEE / MAX_BASIS)
     )
@@ -59,4 +61,5 @@ def test_is_profitable(deployed):
     print("Ending Balance")
     print(ending_balance)
 
-    assert ending_balance > initial_balance_with_fees
+    # checking with slippage from withdrawAll
+    assert ending_balance > initial_balance_with_fees * slippage
