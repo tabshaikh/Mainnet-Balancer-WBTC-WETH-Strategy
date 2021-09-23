@@ -1,5 +1,6 @@
 # Mainnet Balancer WBTC/WETH Strategy - 
-![mainnetwbc](https://user-images.githubusercontent.com/31198893/134468904-ddc9d367-b2f8-44a2-9f17-06fbef531b79.jpg)
+![mainnetwbc](https://user-images.githubusercontent.com/31198893/134469596-12a81357-c7af-4a42-8573-8d851644b267.jpg)
+
 
 # Setup and Installation - 
  - Install the dependencies in the package
@@ -24,6 +25,8 @@ brownie networks import network-config.yaml
 ```
 brownie test tests/test_custom.py -I --verbose
 ```
+#### Note
+Running `brownie test -s --interactive`. All tests will pass except for those calling harvest function as harvesting needs to be done manually.
 
 # Harvest - 
 
